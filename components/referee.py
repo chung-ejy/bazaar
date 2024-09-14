@@ -6,8 +6,7 @@ from math import prod
 
 class Referee(object):
 
-    def __init__(self,name,num_equations=10,cards_in_deck=20,cards_in_field=4,num_of_pebbles=100):
-        self.name = name
+    def __init__(self,num_equations=10,cards_in_deck=20,cards_in_field=4,num_of_pebbles=100):
         self.num_equations = num_equations
         self.cards_in_deck = cards_in_deck
         self.cards_in_field = cards_in_field

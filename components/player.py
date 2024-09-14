@@ -6,6 +6,7 @@ class Player(object):
         self.pebbles = [Pebble.BLUE]
         self.cards = []
         self.score = 0
+        self.isai = False
     
     def draw(self,pebble):
         self.pebbles.append(pebble)

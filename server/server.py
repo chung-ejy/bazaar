@@ -1,8 +1,7 @@
 import zmq
 import json
-import struct
-class Server:
 
+class Server:
     def __init__(self, host='tcp://127.0.0.1', port='65432'):
         self.host = host
         self.port = port
@@ -18,31 +17,42 @@ class Server:
             print(f"Error starting server: {e}")
             raise
 
-    def receive(self, flags=0):
+    def receive(self):
         try:
-            # Use flags if provided, otherwise default to blocking
-            message = self.socket.recv_string(flags)
-            self.clear_queue()
-            with open("state.png", 'rb') as file:
-                image_data = file.read()
-            if not isinstance(image_data, bytes):
-                # Ensure image_data is JSON-encoded if it's not already in bytes
-                image_data = json.dumps(image_data).encode('utf-8')
-            # Send the length of the image_data first (4 bytes)
-            length = struct.pack('I', len(image_data))
-            self.socket.send(length, zmq.SNDMORE)
-            self.clear_queue()
-            self.socket.send(image_data)
-            self.clear_queue()
+            # Receive raw bytes
+            message_bytes = self.socket.recv()
+            # Decode bytes to JSON
+            message = json.loads(message_bytes.decode('utf-8'))
+            # Send a JSON response
+            response = {'status': 'success', 'data': message}
+            self.socket.send_json(response)
             return message
-        
         except zmq.Again as e:
-            print(f"Timeout or no message received: {e}")
-            return None
+            return {}
         except zmq.ZMQError as e:
-            print(f"Error receiving message: {e}")
             raise
-
+        except json.JSONDecodeError as e:
+            # Send an error response for invalid JSON
+            response = {'status': 'error', 'message': 'Invalid JSON'}
+            self.socket.send_json(response)
+    
+    def send(self, data):
+        try:
+            # Convert data to JSON and encode as bytes
+            json_data = json.dumps(data)
+            json_bytes = json_data.encode('utf-8')
+            self.socket.send(json_bytes)
+            message_bytes = self.socket.recv()
+            # Decode bytes to JSON
+            message = json.loads(message_bytes.decode('utf-8'))
+            # Send a JSON response
+            response = {'status': 'success', 'data': message}
+            # print(response)
+        except zmq.ZMQError as e:
+            raise
+        except json.JSONEncodeError as e:
+            print(f"Error encoding JSON: {e}")
+    
     def close(self):
         try:
             self.socket.close()

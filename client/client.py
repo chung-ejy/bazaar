@@ -1,4 +1,5 @@
 import zmq
+import json
 
 class Client:
 
@@ -11,23 +12,50 @@ class Client:
     def connect(self):
         self.socket.connect(f"{self.host}:{self.port}")
     
-    def send(self, message):        
-        # Send a request (message) to the server
-        self.socket.send_string(message)
-        self.clear_queue()
-        length_msg = self.socket.recv()
-        length = int.from_bytes(length_msg, byteorder='big')
-        # Receive the actual data in chunks
-        image_data = b''
-        image_data += self.socket.recv()
-        # Save the received data to a file
-        with open("receive.png", 'wb') as file:
-            file.write(image_data)
+    def receive(self):
+        try:
+            # Receive raw bytes
+            message_bytes = self.socket.recv()
+            # Decode bytes to JSON
+            message = json.loads(message_bytes.decode('utf-8'))
+            # Send a JSON response
+            response = {'status': 'success', 'data': message}
+            self.socket.send_json(response)
+            return message
+        except zmq.Again as e:
+            return {}
+        except zmq.ZMQError as e:
+            raise
+        except json.JSONDecodeError as e:
+            response = {'status': 'error', 'message': 'Invalid JSON'}
+            self.socket.send_json(response)
     
-    def disconnect(self):
-        self.socket.close()
-        self.context.term()
-    
+    def send(self, data):
+        try:
+            # Convert data to JSON and encode as bytes
+            json_data = json.dumps(data)
+            json_bytes = json_data.encode('utf-8')
+            self.socket.send(json_bytes)
+            message_bytes = self.socket.recv()
+            # Decode bytes to JSON
+            message = json.loads(message_bytes.decode('utf-8'))
+            # Send a JSON response
+            response = {'status': 'success', 'data': message}
+            # print(response)
+        except zmq.ZMQError as e:
+            print(f"Error sending message: {e}")
+            raise
+        except json.JSONEncodeError as e:
+            print(f"Error encoding JSON: {e}")
+            
+    def close(self):
+        try:
+            self.socket.close()
+            self.context.term()
+            print("Server closed.")
+        except zmq.ZMQError as e:
+            print(f"Error closing socket or context: {e}")
+
     def clear_queue(self):
         while True:
             try:
@@ -40,3 +68,8 @@ class Client:
             except zmq.ZMQError as e:
                 print(f"Error while clearing socket queue: {e}")
                 break
+    
+    def disconnect(self):
+        self.socket.close()
+        self.context.term()
+    

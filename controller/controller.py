@@ -15,28 +15,31 @@ class Controller:
             self.view.draw_card(card)
         for equation in self.model.board.equations:
             self.view.draw_equation(equation)
-        self.view.draw_player_colors(self.model.player.pebbles)
-        self.view.draw_player_score(self.model.player.name,self.model.player.score)
+        self.view.draw_player_colors(self.model.players[self.model.active_player_index].pebbles)
+        self.view.draw_player_score(self.model.players[self.model.active_player_index].name,self.model.players[self.model.active_player_index].score)
         self.view.save_as_png("state.png")
     
     def live(self):
         return self.model.referee.live(self.model.board)
     
     def turn(self,input):
-        action = Utils.extract_json_objects(input)[0]
+        action = input
         try:
             if action == f"{Action.DRAW.value}":
-                self.model.referee.draw(self.model.board,self.model.player)
+                self.model.referee.draw(self.model.board,self.model.players[self.model.active_player_index])
             elif action == f"{Action.EXCHANGE.value}":
-                query = Utils.extract_json_objects(input)[1]
-                self.model.referee.exchange(query,self.model.board,self.model.player)
+                query = input
+                self.model.referee.exchange(query,self.model.board,self.model.players[self.model.active_player_index])
             elif action == f"{Action.PURCHASE.value}":
-                query = Utils.extract_json_objects(input)[1]
-                self.model.referee.purchase(query,self.model.board,self.model.player)
-                self.model.referee.score(self.model.player)
+                query = input
+                self.model.referee.purchase(query,self.model.board,self.model.players[self.model.active_player_index])
+                self.model.referee.score(self.model.players[self.model.active_player_index])
             elif action == f"{Action.END.value}":
                 sys.exit()
             else:
                 print("invalid command")
         except Exception as e:
             print(str(e))
+        
+    def change_player(self):
+        self.model.change_player()
