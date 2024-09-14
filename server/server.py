@@ -22,28 +22,25 @@ class Server:
         try:
             # Use flags if provided, otherwise default to blocking
             message = self.socket.recv_string(flags)
-            print(f"Received request: {message}")
-            self.socket.send_string("success")
+            self.clear_queue()
+            with open("state.png", 'rb') as file:
+                image_data = file.read()
+            if not isinstance(image_data, bytes):
+                # Ensure image_data is JSON-encoded if it's not already in bytes
+                image_data = json.dumps(image_data).encode('utf-8')
+            # Send the length of the image_data first (4 bytes)
+            length = struct.pack('I', len(image_data))
+            self.socket.send(length, zmq.SNDMORE)
+            self.clear_queue()
+            self.socket.send(image_data)
+            self.clear_queue()
             return message
+        
         except zmq.Again as e:
             print(f"Timeout or no message received: {e}")
             return None
         except zmq.ZMQError as e:
             print(f"Error receiving message: {e}")
-            raise
-
-    def send(self, data):
-        try:
-            if not isinstance(data, bytes):
-                # Ensure data is JSON-encoded if it's not already in bytes
-                data = json.dumps(data).encode('utf-8')
-            # Send the length of the data first (4 bytes)
-            length = struct.pack('I', len(data))
-            self.socket.send(length, zmq.SNDMORE)
-            # Send data to the client
-            self.socket.send(data)
-        except zmq.ZMQError as e:
-            print(f"Error sending message: {e}")
             raise
 
     def close(self):
@@ -53,3 +50,16 @@ class Server:
             print("Server closed.")
         except zmq.ZMQError as e:
             print(f"Error closing socket or context: {e}")
+
+    def clear_queue(self):
+        while True:
+            try:
+                # Non-blocking receive to clear the queue
+                message = self.socket.recv(flags=zmq.NOBLOCK)
+                print(f"Cleared message: {message}")
+            except zmq.Again:
+                # No more messages; exit the loop
+                break
+            except zmq.ZMQError as e:
+                print(f"Error while clearing socket queue: {e}")
+                break

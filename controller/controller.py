@@ -19,11 +19,6 @@ class Controller:
         self.view.draw_player_score(self.model.player.name,self.model.player.score)
         self.view.save_as_png("state.png")
     
-    def send_state(self):
-        with open("state.png", 'rb') as file:
-            image_data = file.read()
-        return image_data
-    
     def live(self):
         return self.model.referee.live(self.model.board)
     
