@@ -132,15 +132,42 @@ class View:
         color_width = 20  # Reduced size for player colors
         color_height = 20
         padding = 5
+        text_padding = 5
 
-        start_x = (self.width - (len(colors) * (color_width + padding))) // 2
+        # Calculate the total width needed for colors and their associated text
+        total_width = sum(
+            color_width + padding + (self.draw.textbbox((0, 0), str(count), font=self.font)[2] - self.draw.textbbox((0, 0), str(count), font=self.font)[0])
+            for _, count in colors.items()
+        )
 
-        for i, color in enumerate(colors):
+        # Calculate the starting x position to center the colors and their counts
+        start_x = (self.width - total_width) // 2
+
+        current_x = start_x
+        for color, count in colors.items():
+            # Draw the color block
             self.draw.rectangle(
-                [start_x + i * (color_width + padding), 10, start_x + i * (color_width + padding) + color_width, 10 + color_height],
+                [current_x, 10, current_x + color_width, 10 + color_height],
                 fill=color.value,
                 outline="black"
             )
+
+            # Draw the count next to the color block
+            count_text = str(count)
+            text_bbox = self.draw.textbbox((0, 0), count_text, font=self.font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
+
+            self.draw.text(
+                (current_x + color_width + text_padding, 10 + (color_height - text_height) // 2),
+                count_text,
+                font=self.font,
+                fill="black"
+            )
+
+            # Move the x position for the next color and count
+            current_x += color_width + padding + text_width + text_padding
+
 
     def draw_player_score(self, player_name, score):
         text = f"{player_name}: {score}"

@@ -29,6 +29,7 @@ class Client:
         except json.JSONDecodeError as e:
             response = {'status': 'error', 'message': 'Invalid JSON'}
             self.socket.send_json(response)
+            return None
     
     def send(self, data):
         try:

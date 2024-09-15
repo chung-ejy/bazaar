@@ -35,14 +35,18 @@ class App:
         controller = Controller(model,view)
         controller.setup()
         controller.render()
-        while controller.model.referee.live(controller.model.board) == True:
+        while controller.live() == True:
             active_player = controller.model.players[controller.model.turn % len(controller.model.players)]
-            commands = [active_player.move()] if active_player.isai == True else Utils.extract_json_objects(self.server.receive()) 
-            if len(commands) > 0:
-                controller.render()
-                for command in commands:
-                    controller.turn(command)
-                controller.model.turn += 1
-                controller.change_player()
-                controller.render()
+            try:
+                commands = [active_player.move()] if active_player.isai == True else Utils.extract_json_objects(self.server.receive()) 
+                if len(commands) > 0:
+                    controller.render()
+                    for command in commands:
+                        controller.turn(command)
+                    controller.model.turn += 1
+                    controller.change_player()
+                    controller.render()
+            except Exception as e:
+                print(str(e))
+                print("invalid command")
         self.server.close()

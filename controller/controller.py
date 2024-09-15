@@ -1,7 +1,5 @@
 from components.action import Action
-from components.utils import Utils
-import sys
-import json
+
 class Controller:
     def __init__(self, model, view):
         self.model = model
@@ -21,7 +19,7 @@ class Controller:
         self.view.save_as_png("state.png")
     
     def live(self):
-        return self.model.referee.live(self.model.board)
+        return self.model.referee.live(self.model.board,self.model.players)
     
     def turn(self,input):
         action = input["action"]
@@ -29,13 +27,20 @@ class Controller:
         try:
             if action == f"{Action.DRAW.value}":
                 self.model.referee.draw(self.model.board,self.model.players[self.model.active_player_index])
+                return
             elif action == f"{Action.EXCHANGE.value}":
-                self.model.referee.exchange(query,self.model.board,self.model.players[self.model.active_player_index])
+                if self.model.referee.legal_exchange(query,self.model.board,self.model.players[self.model.active_player_index]):
+                    self.model.referee.exchange(query,self.model.board,self.model.players[self.model.active_player_index])
+                else:
+                    print("invalid exchange")
             elif action == f"{Action.PURCHASE.value}":
-                self.model.referee.purchase(query,self.model.board,self.model.players[self.model.active_player_index])
-                self.model.referee.score(self.model.players[self.model.active_player_index])
+                if self.model.referee.legal_purchase(query,self.model.board,self.model.players[self.model.active_player_index]):
+                    card = self.model.referee.purchase(query,self.model.board,self.model.players[self.model.active_player_index])
+                    self.model.referee.score(self.model.players[self.model.active_player_index], card)
+                else:
+                    print("invalid purchase")
             elif action == f"{Action.END.value}":
-                sys.exit()
+                return
             else:
                 print("invalid command")
         except Exception as e:

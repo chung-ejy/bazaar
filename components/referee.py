@@ -3,7 +3,7 @@ from .pebble import Pebble
 from .equation import Equation
 from .card import Card
 from math import prod
-
+from collections import Counter
 class Referee(object):
 
     def __init__(self,num_equations=10,cards_in_deck=20,cards_in_field=4,num_of_pebbles=100):
@@ -45,40 +45,79 @@ class Referee(object):
         return cards
     
     def initialize_bank(self):
-        bank = []
+        bank = {}
         for i in range(self.num_of_pebbles):
-            bank.append(choice(list(Pebble)))
+            pebble = choice(list(Pebble))
+            if pebble in bank.keys():
+                bank[pebble] += 1
+            else:
+                bank[pebble] = 1
         return bank
 
-    def live(self,board):
-        return 0 != prod([len(board.bank) > 0, len(board.fieldcards) > 0])
+    def live(self,board,players):
+        return len(board.deck) > 0 and 0 != prod([player.score < 20 for player in players])  
     
     def draw(self,board,player):
-        pebble = board.bank.pop(-1)
+        pebble = choice(list(board.bank.keys()))
+        board.bank[pebble] += -1
         player.draw(pebble)
     
     def exchange(self,query,board,player):
         equation = board.equations[query['equation']]
-        try:
-            for input in equation.input:
-                player.pebbles.remove(input)
-            for output in equation.output:
-                board.bank.remove(output)
-                player.draw(output)
-        except:
-            print("invalid exchange")
+        for input in equation.input:
+            player.pebbles[input] += -1
+        for output in equation.output:
+            board.bank[output] += -1
+            player.draw(output)
 
+    def legal_exchange(self,query,board,player):
+        equation = board.equations[query['equation']]
+        inputs = dict(Counter(equation.input))
+        outputs = dict(Counter(equation.output))
+        legal = True
+        for color in inputs.keys():
+            legal = color in player.pebbles.keys() and player.pebbles[color] >= inputs[color]
+            if legal == False:
+                return False
+            else:
+                continue
+        for color in outputs.keys():
+            legal = color in board.bank.keys() and board.bank[color] >= outputs[color]
+            if legal == False:
+                return False
+            else:
+                continue
+        return legal
+    
     def purchase(self,query,board,player):
         card = board.fieldcards[query['card']]
         inputs = card.cost
         try:
             for input in inputs:
-                player.pebbles.remove(input)
+                player.pebbles[input] += -1
             board.fieldcards.pop(query['card'])
             board.fieldcards.append(board.deck.pop(-1))
+            return card
         except Exception as e:
             print(str(e))
             print("invalid purchase")
     
-    def score(self,player):
-        player.score += len(player.pebbles) / 3
+    def legal_purchase(self,query,board,player):
+        card = board.fieldcards[query['card']]
+        cost = dict(Counter(card.cost))
+        legal = True
+        for color in cost.keys():
+            if color not in player.pebbles.keys() or player.pebbles[color] < cost[color]:
+                return False
+        return legal
+    
+    def score(self,player,card):
+        if sum(player.pebbles.values()) > 3:
+            player.score += 2 if card.smiley else 1
+        elif sum(player.pebbles.values()) > 2:
+            player.score +=  3 if card.smiley else 2
+        elif sum(player.pebbles.values()) > 1:
+            player.score +=  5 if card.smiley else 3
+        else:
+            player.score +=  8 if card.smiley else 5
+        
