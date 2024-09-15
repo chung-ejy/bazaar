@@ -1,6 +1,7 @@
 from components.action import Action
 from components.utils import Utils
 import sys
+import json
 class Controller:
     def __init__(self, model, view):
         self.model = model
@@ -23,15 +24,14 @@ class Controller:
         return self.model.referee.live(self.model.board)
     
     def turn(self,input):
-        action = input
+        action = input["action"]
+        query = input["query"]
         try:
             if action == f"{Action.DRAW.value}":
                 self.model.referee.draw(self.model.board,self.model.players[self.model.active_player_index])
             elif action == f"{Action.EXCHANGE.value}":
-                query = input
                 self.model.referee.exchange(query,self.model.board,self.model.players[self.model.active_player_index])
             elif action == f"{Action.PURCHASE.value}":
-                query = input
                 self.model.referee.purchase(query,self.model.board,self.model.players[self.model.active_player_index])
                 self.model.referee.score(self.model.players[self.model.active_player_index])
             elif action == f"{Action.END.value}":

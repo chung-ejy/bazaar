@@ -7,4 +7,4 @@ class AIPlayer(Player):
         self.isai = True
     
     def move(self):
-        return "DRAW"
+        return {"action":"DRAW","query":{}}

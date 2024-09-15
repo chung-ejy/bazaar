@@ -14,7 +14,6 @@ class App:
     def __init__(self):
         self.server = Server()
         self.signup = True
-        # self.player = Player("eric")
     
     def run(self):
         self.server.start_server()
@@ -32,17 +31,18 @@ class App:
         player_classes = [Player(x) for x in players]
         player_classes.append(AIPlayer("ai"))
         model = Map(Referee(),player_classes)
-        view = View()  # No view component since we're not using a GUI
+        view = View() 
         controller = Controller(model,view)
         controller.setup()
+        controller.render()
         while controller.model.referee.live(controller.model.board) == True:
             active_player = controller.model.players[controller.model.turn % len(controller.model.players)]
             commands = [active_player.move()] if active_player.isai == True else Utils.extract_json_objects(self.server.receive()) 
             if len(commands) > 0:
+                controller.render()
                 for command in commands:
                     controller.turn(command)
-                controller.render()
                 controller.model.turn += 1
                 controller.change_player()
-                print(controller.model.turn,controller.model.active_player_index)
+                controller.render()
         self.server.close()

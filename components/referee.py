@@ -58,7 +58,7 @@ class Referee(object):
         player.draw(pebble)
     
     def exchange(self,query,board,player):
-        equation = board.equations[query["equation"]]
+        equation = board.equations[query['equation']]
         try:
             for input in equation.input:
                 player.pebbles.remove(input)
@@ -69,13 +69,12 @@ class Referee(object):
             print("invalid exchange")
 
     def purchase(self,query,board,player):
-        card = board.fieldcards[query["card"]]
+        card = board.fieldcards[query['card']]
         inputs = card.cost
         try:
             for input in inputs:
-                print(input)
                 player.pebbles.remove(input)
-            board.fieldcards.pop(query["card"])
+            board.fieldcards.pop(query['card'])
             board.fieldcards.append(board.deck.pop(-1))
         except Exception as e:
             print(str(e))
