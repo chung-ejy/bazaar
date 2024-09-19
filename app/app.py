@@ -9,6 +9,7 @@ import sys
 import time
 import json
 from components.utils import Utils
+
 class App:
     
     def __init__(self):
