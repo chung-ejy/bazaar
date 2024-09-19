@@ -11,4 +11,4 @@ class Player(object):
         if pebble in self.pebbles.keys():
             self.pebbles[pebble] +=1
         else:
-            self.pebbles[pebble] =1
+            self.pebbles[pebble] = 1
